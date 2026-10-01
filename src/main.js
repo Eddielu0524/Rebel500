@@ -6,6 +6,7 @@ import { PARTS, COLORS, DEFAULT_CONFIG, SOURCE_URL, togglePart, validateConfig, 
 const icon = (name, cls = '') => `<i data-lucide="${name}" class="${cls}"></i>`;
 const icons = { ArrowUpRight, Bookmark, Info, Ruler, Lightbulb, Plus, Minus, Scan, Camera, Box, Rotate3d, Mouse, CircleCheck, Layers2, Check, Columns2, ArrowRight, ShieldCheck, X, Download, Upload, CircleAlert };
 const $ = selector => document.querySelector(selector);
+const BASE_URL = import.meta.env.BASE_URL;
 const HONDA_JAPAN_FEATURES = 'https://www.honda.co.jp/Rebel500/features01.html';
 const HONDA_JAPAN_PRESS = 'https://global.honda/jp/news/2025/2250206-rebel500/image_download.html';
 const REFERENCES = [
@@ -27,7 +28,7 @@ let lights = false, dimensions = false, autoRotate = false, dark = false;
 
 document.querySelector('#app').innerHTML = `
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Rebel Garage 首頁"><span class="brand-mark">R<span>®</span></span><span class="brand-name">REBEL<span>GARAGE / CUSTOM STUDIO</span></span></a>
+    <a class="brand" href="${BASE_URL}" aria-label="Rebel Garage 首頁"><span class="brand-mark">R<span>®</span></span><span class="brand-name">REBEL<span>GARAGE / CUSTOM STUDIO</span></span></a>
     <nav class="header-nav" aria-label="主要導覽"><span class="nav-current">改裝工作室</span><button id="open-specs">車款資料 ${icon('arrow-up-right')}</button></nav>
     <div class="header-actions"><span class="local-badge"><span></span>你的私人車庫</span><button class="button save-button" id="save-build">${icon('bookmark')}<span>儲存方案</span></button></div>
   </header>
@@ -68,10 +69,10 @@ document.querySelector('#app').innerHTML = `
     <h2 id="reference-heading">從實車樣貌出發</h2>
     <p class="reference-intro">以 Honda 台灣 2025 Rebel 500 為基礎，搭配日本官網多角度照片，重建輪廓、材質與色彩。</p>
     <figure class="reference-gallery">
-      <div class="reference-image"><img id="reference-photo" src="/references/${REFERENCES[0].file}" alt="${REFERENCES[0].alt}"><span id="reference-type" class="reference-type">${REFERENCES[0].type}</span></div>
+      <div class="reference-image"><img id="reference-photo" src="${BASE_URL}references/${REFERENCES[0].file}" alt="${REFERENCES[0].alt}"><span id="reference-type" class="reference-type">${REFERENCES[0].type}</span></div>
       <figcaption class="reference-caption" aria-live="polite" aria-atomic="true"><div><strong id="reference-title">${REFERENCES[0].label}</strong><p id="reference-note">${REFERENCES[0].note}</p></div><a id="reference-source" href="${REFERENCES[0].url}" target="_blank" rel="noopener noreferrer"><span>${REFERENCES[0].source}</span>${icon('arrow-up-right')}</a></figcaption>
     </figure>
-    <div class="reference-thumbnails" role="group" aria-label="選擇官方參考照片">${REFERENCES.map((ref,index)=>`<button class="reference-thumb ${index===0?'active':''} ${ref.id==='cowl'?'accessory-reference':''}" data-reference="${ref.id}" aria-label="查看${ref.label}：${ref.type}" aria-pressed="${index===0}" aria-controls="reference-photo"><img src="/references/${ref.file}" alt="" loading="lazy"><span>${ref.label}</span></button>`).join('')}</div>
+    <div class="reference-thumbnails" role="group" aria-label="選擇官方參考照片">${REFERENCES.map((ref,index)=>`<button class="reference-thumb ${index===0?'active':''} ${ref.id==='cowl'?'accessory-reference':''}" data-reference="${ref.id}" aria-label="查看${ref.label}：${ref.type}" aria-pressed="${index===0}" aria-controls="reference-photo"><img src="${BASE_URL}references/${ref.file}" alt="" loading="lazy"><span>${ref.label}</span></button>`).join('')}</div>
     <p class="reference-scope">前六張為標準車造型與細節；頭燈罩照片為 S 版配備／一般版選配。日本照片用於補足角度，各地車色與配備可能不同。</p>
     <div class="info-callout"><strong>照片參考，持續接近實車</strong><p>這是可旋轉、可試裝配件的 3D 外觀重建。未取得原廠 CAD 或實車掃描，隱藏結構與配件位置仍為估算；安裝孔位及適用性需依商品規格確認。</p></div>
     <dl class="spec-table"><div><dt>原廠車長 × 寬 × 高</dt><dd>2,205 × 820 × 1,090 mm</dd></div><div><dt>軸距</dt><dd>1,490 mm</dd></div><div><dt>座高</dt><dd>690 mm</dd></div><div><dt>前／後輪胎</dt><dd>130/90-16 · 150/80-16</dd></div></dl>
@@ -118,7 +119,7 @@ function showBuild(){
 
 document.addEventListener('click',event=>{
   const reference=event.target.closest('[data-reference]');
-  if(reference){const item=REFERENCES.find(ref=>ref.id===reference.dataset.reference);if(!item)return;const photo=$('#reference-photo');photo.src=`/references/${item.file}`;photo.alt=item.alt;$('#reference-title').textContent=item.label;$('#reference-note').textContent=item.note;$('#reference-type').textContent=item.type;$('#reference-type').classList.toggle('is-accessory',item.id==='cowl');const source=$('#reference-source');source.href=item.url;source.querySelector('span').textContent=item.source;document.querySelectorAll('[data-reference]').forEach(button=>{const active=button===reference;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});return;}
+  if(reference){const item=REFERENCES.find(ref=>ref.id===reference.dataset.reference);if(!item)return;const photo=$('#reference-photo');photo.src=`${BASE_URL}references/${item.file}`;photo.alt=item.alt;$('#reference-title').textContent=item.label;$('#reference-note').textContent=item.note;$('#reference-type').textContent=item.type;$('#reference-type').classList.toggle('is-accessory',item.id==='cowl');const source=$('#reference-source');source.href=item.url;source.querySelector('span').textContent=item.source;document.querySelectorAll('[data-reference]').forEach(button=>{const active=button===reference;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});return;}
   const part=event.target.closest('[data-part]');
   if(part){const id=part.dataset.part;const installing=!config.parts.includes(id);const result=togglePart(config,id);config=result.config;setCompare(false);update();const name=PARTS.find(p=>p.id===id).name;toast(result.removed.length?`已加裝${name}，並卸下${PARTS.find(p=>p.id===result.removed[0]).name}`:`已${installing?'加裝':'卸下'}${name}`);return;}
   const paint=event.target.closest('[data-color]');if(paint){config={...config,color:paint.dataset.color};update();return;}

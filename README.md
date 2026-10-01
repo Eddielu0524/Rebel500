@@ -6,6 +6,8 @@
 
 ## 開啟
 
+線上版：[Rebel 500 Custom Studio](https://eddielu0524.github.io/Rebel500/)。
+
 在此資料夾開啟終端機：
 
 ```powershell
@@ -14,6 +16,12 @@ npm run dev
 ```
 
 瀏覽器開啟 http://127.0.0.1:5173 。若已安裝依賴，只需 `npm run dev`。也可以執行 `start-studio.ps1`。
+
+## GitHub Pages 部署
+
+此專案需要 Vite 建置，不能直接將原始碼根目錄當作靜態網站發布。Pages 的 Source 設為 **GitHub Actions**，推送 `main` 後，`.github/workflows/deploy-pages.yml` 會執行 `npm ci`、測試、建置，然後將 `dist` 部署到 Pages。
+
+正式版資源路徑使用 `/Rebel500/`，本機開發維持 `/`。用 `npm run build` 及 `npm run preview` 可在本機檢查正式版；預覽網址為 `http://127.0.0.1:4173/Rebel500/`。
 
 ## 操作
 
