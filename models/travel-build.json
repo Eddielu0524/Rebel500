@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "color": "green",
+  "parts": [
+    "windshield",
+    "gaiters",
+    "brownSeat",
+    "pillion",
+    "saddlebags",
+    "backrest",
+    "rack"
+  ]
+}
