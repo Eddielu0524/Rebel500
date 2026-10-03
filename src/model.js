@@ -7,6 +7,7 @@ import { buildBodywork } from './bodywork.js';
 import { buildCockpit } from './cockpit.js';
 import { buildEngine } from './engine.js';
 import { buildMechanicalDetails } from './mechanical-details.js';
+import { createPaintMaterial, applyPaintFinish, createSurfaceMaterial, createLeatherMaterial, createSmokedScreenMaterial, projectSurfaceUVs } from './materials.js';
 
 const V = (p) => new THREE.Vector3(...p);
 const TAU = Math.PI * 2;
@@ -91,36 +92,22 @@ function bolt(parent, at, material, radius = .007, axis = 'z') {
   rod(parent, at, end, radius, material, radius, 6);
 }
 
-function leatherTexture(quilt = false) {
-  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
-  const ctx = canvas.getContext('2d'); ctx.fillStyle = '#969696'; ctx.fillRect(0, 0, 512, 512);
-  let seed = 123;
-  for (let i = 0; i < 30000; i++) {
-    seed = (seed * 16807) % 2147483647; const x = seed % 512;
-    seed = (seed * 16807) % 2147483647; const y = seed % 512;
-    ctx.fillStyle = i % 2 ? '#777777' : '#aaaaaa'; ctx.fillRect(x, y, 1, 1);
-  }
-  if (quilt) {
-    ctx.strokeStyle = '#424242'; ctx.lineWidth = 5;
-    for (let i = -512; i < 1024; i += 85) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 512, 512); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i - 512, 512); ctx.stroke();
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas); texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  return texture;
-}
-
 export function createMotorcycle() {
   const root = new THREE.Group(); root.name = 'Rebel_500_reference_reconstruction_metres';
   root.userData = { units: 'metres', source: 'Honda Taiwan 2025 Rebel 500', accuracy: 'Reference reconstruction. Not OEM CAD. Unmeasured surfaces and accessories are approximate.', wheelbase: SPEC.wheelbase };
   const base = new THREE.Group(); base.name = 'stock_motorcycle'; root.add(base);
-  const paint = new THREE.MeshPhysicalMaterial({ color: COLORS[0].hex, metalness: .14, roughness: .24, clearcoat: 1, clearcoatRoughness: .19 });
-  const black = mat('#101214', .38, .36), rubber = mat('#181b1d', .02, .94), groove = mat('#080a0b', .02, .99);
-  const silver = mat('#c0c5c7', .74, .31), alloy = mat('#34383b', .70, .43), dark = mat('#090e10', .6, .34);
-  const seatMat = mat('#1c1d1b', .0, .88, { bumpMap: leatherTexture(), bumpScale: .0006 });
-  const quiltTexture = leatherTexture(true); quiltTexture.colorSpace = THREE.SRGBColorSpace;
-  const brown = mat('#8a5942', .0, .86, { map: quiltTexture, bumpMap: quiltTexture, bumpScale: .002 });
+  const paint = createPaintMaterial(COLORS[0].hex);
+  const black = createSurfaceMaterial('powder'), rubber = createSurfaceMaterial('rubber');
+  const silver = createSurfaceMaterial('brushed', { color: '#bfc4c6', roughness: .30 });
+  const alloy = createSurfaceMaterial('anodized', { color: '#45484b', roughness: .41 });
+  const dark = createSurfaceMaterial('plastic', { color: '#0b0d0e', roughness: .57 });
+  const seatMat = createLeatherMaterial({ color: '#282727', name: 'fine_grain_black_saddle' });
+  const brown = createLeatherMaterial({ color: '#80543e', quilt: true, name: 'cognac_diamond_quilt_with_fine_stitches' });
+  const supportCoat = createSurfaceMaterial('powder', { color: '#191b1c', roughness: .48, name: 'accessory_powdercoated_steel' });
+  const anodized = createSurfaceMaterial('anodized', { color: '#181b1e', roughness: .33 });
+  const cowlCoat = createSurfaceMaterial('powder', { color: '#131619', roughness: .34, clearcoat: .32, clearcoatRoughness: .24, name: 'satin_black_headlight_cowl' });
+  const bootRubber = createSurfaceMaterial('rubber', { color: '#141618', roughness: .76, name: 'flexible_fork_boot_rubber' });
+  const strapLeather = createLeatherMaterial({ color: '#181716', name: 'black_leather_straps' });
   const red = mat('#5e0710', .05, .25, { emissive: '#8c0a10', emissiveIntensity: .45 });
   const amber = mat('#dd780b', .15, .25, { emissive: '#ff8800', emissiveIntensity: .2 });
   const glass = mat('#9fa9ae', .6, .12, { emissive: '#dbe7f3', emissiveIntensity: .025 });
@@ -147,7 +134,7 @@ export function createMotorcycle() {
   // Side covers, shaped triangular panels.
   for(const s of [-1,1]) {
     const shape = new THREE.Shape(); shape.moveTo(.135,.62); shape.lineTo(.47,.615); shape.quadraticCurveTo(.42,.54,.32,.47); shape.quadraticCurveTo(.30,.455,.275,.48); shape.lineTo(.135,.62);
-    const panel = add(base,new THREE.ExtrudeGeometry(shape,{depth:.015,bevelEnabled:true,bevelSize:.008,bevelThickness:.005,bevelSegments:3,steps:1}),black,[0,0,s*.11]);
+    const panel = add(base,new THREE.ExtrudeGeometry(shape,{depth:.015,bevelEnabled:true,bevelSize:.008,bevelThickness:.005,bevelSegments:3,steps:1}),dark,[0,0,s*.11]);
     bolt(base,[.35,.60,s*.13],alloy,.005);
   }
   const {stockSeat} = buildBodywork(base,helpers,materials);
@@ -197,8 +184,8 @@ export function createMotorcycle() {
   const cowl=partGroup('cowl');
   const cowlShape=new THREE.Shape();cowlShape.absellipse(0,0,.099,.102,0,TAU,false,0);
   const opening=new THREE.Path();opening.absarc(0,0,.078,0,TAU,true);cowlShape.holes.push(opening);
-  add(cowl,new THREE.ExtrudeGeometry(cowlShape,{depth:.070,bevelEnabled:true,bevelSize:.007,bevelThickness:.008,bevelSegments:4,curveSegments:64}),black,[-.573,.828,0],[0,-Math.PI/2,0]);
-  fender(cowl,-.528,.83,.102,.116,.18,2.5,black);
+  add(cowl,new THREE.ExtrudeGeometry(cowlShape,{depth:.070,bevelEnabled:true,bevelSize:.007,bevelThickness:.008,bevelSegments:4,curveSegments:64}),cowlCoat,[-.573,.828,0],[0,-Math.PI/2,0]);
+  fender(cowl,-.528,.83,.102,.116,.18,2.5,cowlCoat);
   const windshield=partGroup('windshield');
   const positions=[],indices=[];
   for(let y=0;y<=22;y++)for(let x=0;x<=30;x++){
@@ -207,38 +194,40 @@ export function createMotorcycle() {
     if(y<22&&x<30){const i=y*31+x;indices.push(i,i+1,i+31,i+1,i+32,i+31);}
   }
   const wg=new THREE.BufferGeometry();wg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));wg.setIndex(indices);wg.computeVertexNormals();
-  add(windshield,wg,new THREE.MeshPhysicalMaterial({color:'#353c3b',metalness:0,roughness:.11,transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false,clearcoat:.65,clearcoatRoughness:.10}));
-  for(const s of [-1,1]){rod(windshield,[-.448,.85,s*.098],[-.47,.998,s*.12],.006,black);bolt(windshield,[-.470,.988,s*.122],silver,.005,'x');}
+  const screen=add(windshield,wg,createSmokedScreenMaterial());screen.castShadow=false;
+  for(const s of [-1,1]){rod(windshield,[-.448,.85,s*.098],[-.47,.998,s*.12],.006,anodized);bolt(windshield,[-.470,.988,s*.122],silver,.005,'x');}
   const gaiters=partGroup('gaiters');
   for(const s of [-1,1])for(let i=0;i<14;i++){
     const t=i/13;const a=[-.593+t*.089,.61+t*.166,s*.098],b=[a[0]+.004,a[1]+.008,a[2]];
-    rod(gaiters,a,b,.029+(i%2)*.0015,rubber,.030,28);
+    rod(gaiters,a,b,.029+(i%2)*.0015,bootRubber,.030,28);
   }
   const pillion=partGroup('pillion');
   box(pillion,[.25,.065,.202],[.755,.775,0],seatMat,.027,[0,0,-.06]);
-  const strap=box(pillion,[.022,.071,.206],[.786,.777,0],dark,.020,[0,0,-.06]);
+  const strap=box(pillion,[.022,.071,.206],[.786,.777,0],strapLeather,.020,[0,0,-.06]);
   const backrest=partGroup('backrest');
-  for(const s of [-1,1])tube(backrest,[[.68,.63,s*.117],[.915,.72,s*.115],[.926,1.03,s*.078]],.011,black);
+  for(const s of [-1,1])tube(backrest,[[.68,.63,s*.117],[.915,.72,s*.115],[.926,1.03,s*.078]],.011,supportCoat);
   box(backrest,[.062,.142,.208],[.913,1.009,0],seatMat,.031,[0,0,.06]);
   const rack=partGroup('rack');
-  tube(rack,[[.863,.737,-.134],[1.10,.733,-.134],[1.116,.731,0],[1.10,.733,.134],[.863,.737,.134]],.009,black);
-  for(let i=0;i<5;i++)rod(rack,[.875+i*.045,.733,-.13],[.875+i*.045,.733,.13],.006,black);
-  for(const s of [-1,1]){rod(rack,[.92,.733,s*.13],[.92,.596,s*.104],.008,black);rod(rack,[.88,.733,s*.13],[.61,.628,s*.12],.007,black);}
+  tube(rack,[[.863,.737,-.134],[1.10,.733,-.134],[1.116,.731,0],[1.10,.733,.134],[.863,.737,.134]],.009,supportCoat);
+  for(let i=0;i<5;i++)rod(rack,[.875+i*.045,.733,-.13],[.875+i*.045,.733,.13],.006,supportCoat);
+  for(const s of [-1,1]){rod(rack,[.92,.733,s*.13],[.92,.596,s*.104],.008,supportCoat);rod(rack,[.88,.733,s*.13],[.61,.628,s*.12],.007,supportCoat);}
   const saddlebags=partGroup('saddlebags');
-  const bagLeather=mat('#25231e',0,.86,{bumpMap:leatherTexture(),bumpScale:.0008});
+  const bagLeather=createLeatherMaterial({color:'#302c28',name:'grained_saddlebag_leather'});
+  const bagPiping=mat('#34312d',0,.77);
   for(const s of [-1,1]){
-    tube(saddlebags,[[.49,.60,s*.13],[.52,.58,s*.211],[.51,.34,s*.211],[.83,.34,s*.211],[.88,.59,s*.211],[.84,.64,s*.11]],.007,black);
+    tube(saddlebags,[[.49,.60,s*.13],[.52,.58,s*.211],[.51,.34,s*.211],[.83,.34,s*.211],[.88,.59,s*.211],[.84,.64,s*.11]],.007,supportCoat);
     box(saddlebags,[.340,.270,.137],[.714,.493,s*.269],bagLeather,.035,[0,0,-.06]);
     box(saddlebags,[.352,.081,.144],[.708,.603,s*.269],bagLeather,.018,[0,0,-.06]);
-    tube(saddlebags,[[.57,.594,s*.342],[.567,.389,s*.342],[.851,.373,s*.342],[.86,.578,s*.342]],.0014,alloy);
+    tube(saddlebags,[[.57,.594,s*.342],[.567,.389,s*.342],[.851,.373,s*.342],[.86,.578,s*.342]],.0014,bagPiping);
     for(const x of [.613,.81]){
-      box(saddlebags,[.023,.214,.008],[x,.509,s*.342],dark,.003);
+      box(saddlebags,[.023,.214,.008],[x,.509,s*.342],strapLeather,.003);
       box(saddlebags,[.034,.039,.01],[x,.508,s*.351],silver,.004);
-      box(saddlebags,[.023,.027,.012],[x,.508,s*.357],dark,.003);
+      box(saddlebags,[.023,.027,.012],[x,.508,s*.357],strapLeather,.003);
       for(let y=0;y<4;y++)bolt(saddlebags,[x,.447+y*.01,s*.35],alloy,.0015);
     }
   }
   for(const id of ['cowl','windshield'])for(const mesh of parts[id].children)mesh.position.y+=.071;
+  projectSurfaceUVs(root);
   // Merge static geometry by material. Independent accessories remain removable.
   // This keeps the detailed model responsive on integrated graphics.
   function batch(group, skip) {
@@ -263,6 +252,7 @@ export function createMotorcycle() {
     setConfig(config, stock = false) {
       const color=COLORS.find(c=>c.id===config.color) || COLORS[0];
       paint.color.set(color.hex);
+      root.userData.finish=applyPaintFinish(paint,config.finish||'gloss');
       for(const [id,group]of Object.entries(parts))group.visible=!stock&&config.parts.includes(id);
       stockSeat.visible=stock||!config.parts.includes('brownSeat');
       pillion.children[0].material=!stock&&config.parts.includes('brownSeat')?brown:seatMat;

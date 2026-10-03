@@ -1,6 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "color": "green",
+  "finish": "satin",
   "parts": [
     "windshield",
     "gaiters",
@@ -9,5 +10,6 @@
     "saddlebags",
     "backrest",
     "rack"
-  ]
+  ],
+  "customParts": []
 }

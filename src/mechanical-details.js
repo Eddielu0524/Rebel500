@@ -1,12 +1,13 @@
 import * as THREE from 'three';
+import { createSurfaceMaterial } from './materials.js';
 
 // Additional assemblies shaped against Honda's radiator/exhaust/rear photographs.
 export function buildMechanicalDetails(parent,h,m) {
   const {add,rod,tube,box,ring,bolt}=h;
   const {black,rubber,dark,silver,alloy,amber}=m;
-  const charcoal=new THREE.MeshStandardMaterial({color:'#242628',metalness:.4,roughness:.58});
-  const exhaustPaint=new THREE.MeshStandardMaterial({color:'#202225',metalness:.55,roughness:.43});
-  const brushed=new THREE.MeshStandardMaterial({color:'#b7bec0',metalness:.94,roughness:.32});
+  const charcoal=createSurfaceMaterial('powder',{color:'#282a2c',roughness:.58,name:'cooling_matrix_and_brackets'});
+  const exhaustPaint=createSurfaceMaterial('exhaust',{name:'heat_resistant_satin_exhaust_coating'});
+  const brushed=createSurfaceMaterial('brushed',{color:'#b7bec0',roughness:.30,name:'brushed_silencer_end_cap'});
   const radiator=new THREE.Group();radiator.name='radiator_and_cooling_lines';
   radiator.position.set(-.377,.553,0);radiator.rotation.z=.26;parent.add(radiator);
   box(radiator,[.038,.259,.231],[0,0,0],dark,.009);

@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { createMotorcycle } from './model.js';
 import { SPEC } from './config.js';
+import { createCustomPartsManager } from './custom-parts-3d.js';
 
 // Real studio reflections come from a small number of large luminous surfaces.
 // Keeping the rest of the room dark preserves the black paint and gives curved
@@ -138,6 +139,7 @@ export function createViewer(container, onReady, onError) {
   let dirty=true, dark=false, tween=null, last=0, size={width:0,height:0};
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const invalidate=()=>{dirty=true;};
+  const customParts=createCustomPartsManager(bike.root,{invalidate:()=>{contactShadow.invalidate();invalidate();},onError:error=>console.warn('配件圖片載入失敗',error)});
   controls.addEventListener('change',invalidate);
   controls.addEventListener('start',()=>{tween=null;});
   let fitScale=1;
@@ -174,8 +176,8 @@ export function createViewer(container, onReady, onError) {
     renderer.setPixelRatio(ratio);renderer.setSize(oldSize.x,oldSize.y);invalidate();return result;
   }
   const api={
-    bike, camera, controls, scene, renderer,
-    setConfig(config,stock=false){bike.setConfig(config,stock);contactShadow.invalidate();invalidate();},
+    bike, camera, controls, scene, renderer, customParts,
+    setConfig(config,stock=false){bike.setConfig(config,stock);customParts.setParts(config.customParts||[],{stock});contactShadow.invalidate();invalidate();},
     setView(view){
       const distance=3.65;const views={perspective:homePosition,left:new THREE.Vector3(0,.70,-distance),right:new THREE.Vector3(0,.70,distance),front:new THREE.Vector3(-distance,.76,0),rear:new THREE.Vector3(distance,.76,0),top:new THREE.Vector3(0,4.1,.001)};
       controls.autoRotate=false;
@@ -192,9 +194,9 @@ export function createViewer(container, onReady, onError) {
     capture(){
       const previous=scene.background;scene.background=new THREE.Color(dark?'#242a27':'#f1f2ec');render();const data=renderer.domElement.toDataURL('image/png');scene.background=previous;invalidate();return data;
     },
-    async exportGLB(){return new GLTFExporter().parseAsync(bike.root,{binary:true,onlyVisible:true,maxTextureSize:512});},
+    async exportGLB(){await customParts.whenReady();return new GLTFExporter().parseAsync(bike.root,{binary:true,onlyVisible:true,maxTextureSize:512});},
     thumbnails,
-    dispose(){observer.disconnect();controls.dispose();renderer.setAnimationLoop(null);contactShadow.dispose();envTarget.dispose();renderer.dispose();},
+    dispose(){observer.disconnect();controls.dispose();renderer.setAnimationLoop(null);customParts.dispose();contactShadow.dispose();envTarget.dispose();renderer.dispose();},
   };
   requestAnimationFrame(()=>{render();onReady(api);});
   return api;

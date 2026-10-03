@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createSurfaceMaterial } from './materials.js';
 
 const TAU = Math.PI * 2;
 
@@ -35,25 +36,10 @@ export function buildEngine(parent, helpers, materials) {
   engine.name = '471cc_liquid_cooled_parallel_twin';
   parent.add(engine);
 
-  const grainPixels = new Uint8Array(128 * 128 * 4);
-  let grainSeed = 500;
-  for (let i = 0; i < grainPixels.length; i += 4) {
-    grainSeed = (grainSeed * 1664525 + 1013904223) >>> 0;
-    const shade = 98 + (grainSeed >>> 26);
-    grainPixels[i] = grainPixels[i+1] = grainPixels[i+2] = shade;
-    grainPixels[i+3] = 255;
-  }
-  const grain = new THREE.DataTexture(grainPixels,128,128);
-  grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.repeat.set(6,6);
-  grain.magFilter = THREE.LinearFilter; grain.minFilter = THREE.LinearMipmapLinearFilter;
-  grain.generateMipmaps = true; grain.needsUpdate = true;
-  const cast = new THREE.MeshStandardMaterial({ color: '#303234', metalness: .38, roughness: .59, bumpMap:grain, bumpScale:.00045 });
-  cast.name = 'fine_black_cast_aluminium';
-  const cover = new THREE.MeshStandardMaterial({ color: '#2f3133', metalness: .44, roughness: .4 });
-  cover.name = 'satin_black_engine_covers';
-  const raised = new THREE.MeshStandardMaterial({ color: '#414346', metalness: .45, roughness: .49 });
-  raised.name = 'cast_rib_edge';
-  const joint = new THREE.MeshStandardMaterial({ color: '#0e1211', metalness: .16, roughness: .77 });
+  const cast = createSurfaceMaterial('cast', { color: '#383a3b', name: 'fine_black_cast_aluminium' });
+  const cover = createSurfaceMaterial('cover', { color: '#303234', name: 'satin_black_engine_covers' });
+  const raised = createSurfaceMaterial('cast', { color: '#414346', roughness: .51, name: 'cast_rib_edge' });
+  const joint = createSurfaceMaterial('rubber', { color: '#101312', roughness: .91, name: 'engine_gasket_and_recess' });
 
   function casting(name, outline, z, depth, material = cast, bevel = .005) {
     const geometry = new THREE.ExtrudeGeometry(roundedOutline(outline), {

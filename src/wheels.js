@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createSurfaceMaterial } from './materials.js';
 
 // Profile and details traced against Honda's 2025 wheel close-up (detail-09).
 export function buildWheel(parent, x, radius, width, front, h, m) {
@@ -7,10 +8,10 @@ export function buildWheel(parent, x, radius, width, front, h, m) {
   const TAU = Math.PI * 2;
   const group = new THREE.Group(); parent.add(group);
   group.name = front ? 'front_16in_cast_wheel' : 'rear_16in_cast_wheel';
-  const sidewall = new THREE.MeshStandardMaterial({ color: '#141517', roughness: .87, metalness: 0 });
-  const tread = new THREE.MeshStandardMaterial({ color: '#090a0b', roughness: .98 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: '#101214', roughness: .33, metalness: .50 });
-  const machining = new THREE.MeshStandardMaterial({ color: '#969da1', roughness: .40, metalness: .94 });
+  const sidewall = createSurfaceMaterial('rubber', { color: '#17191b', roughness: .87, name: 'moulded_tyre_rubber' });
+  const tread = new THREE.MeshStandardMaterial({ color: '#080a0b', roughness: .97 });
+  const rimMat = createSurfaceMaterial('powder', { color: '#17191b', roughness: .34, clearcoat: .2, name: 'black_coated_cast_wheel' });
+  const machining = createSurfaceMaterial('brushed', { color: '#a9afb2', roughness: .37, anisotropy: .45, name: 'machined_stainless_brake_rotor' });
   const points = [
     [.196,-width*.30],[.202,-width*.42],[.221,-width*.49],[radius-.074,-width*.53],
     [radius-.050,-width*.515],[radius-.026,-width*.44],[radius-.010,-width*.29],

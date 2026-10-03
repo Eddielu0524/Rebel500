@@ -1,3 +1,5 @@
+import { validateCustomParts } from './custom-parts.js';
+
 export const SOURCE_URL = 'https://moto.honda-taiwan.com.tw/motor/Detail/681dd145-be45-4248-a34e-8c554ccc8e8b';
 
 export const SPEC = Object.freeze({ length: 2.205, width: 0.820, height: 1.090, wheelbase: 1.490, seatHeight: 0.690, frontRadius: .2032 + .130 * .90, rearRadius: .2032 + .150 * .80 });
@@ -21,14 +23,17 @@ export const PARTS = [
   { id: 'rack', name: '輕旅行後貨架', en: 'REAR CARRIER', category: 'rear', note: '黑色管狀貨架，延伸載物空間', source: '原廠配件造型參考' },
 ];
 
-export const DEFAULT_CONFIG = Object.freeze({ version: 1, color: 'black', parts: [] });
+export const FINISHES = [{id:'gloss',name:'亮光',label:'GLOSS'}, {id:'satin',name:'緞光',label:'SATIN'}, {id:'matte',name:'消光',label:'MATTE'}];
+export const DEFAULT_CONFIG = Object.freeze({ version: 2, color: 'black', finish: 'gloss', parts: [], customParts: [] });
 
 export function validateConfig(input) {
-  if (!input || input.version !== 1 || !COLORS.some(c => c.id === input.color) || !Array.isArray(input.parts)) throw new Error('方案格式不正確，請匯入本工作室匯出的 JSON 檔。');
+  if (!input || ![1,2].includes(input.version) || !COLORS.some(c => c.id === input.color) || !Array.isArray(input.parts)) throw new Error('方案格式不正確，請匯入本工作室匯出的 JSON 檔。');
   const ids = new Set(PARTS.map(p => p.id));
   if (input.parts.some(id => !ids.has(id)) || new Set(input.parts).size !== input.parts.length) throw new Error('方案包含不支援或重複的配件。');
   for (const part of PARTS) if (input.parts.includes(part.id) && part.conflicts?.some(id => input.parts.includes(id))) throw new Error('方案同時包含互斥配件，請檢查頭燈罩與風鏡。');
-  return { version: 1, color: input.color, parts: [...input.parts] };
+  const finish = input.finish ?? 'gloss';
+  if (!FINISHES.some(f=>f.id===finish)) throw new Error('不支援此車漆塗層。');
+  return { version: 2, color: input.color, finish, parts: [...input.parts], customParts: validateCustomParts(input.customParts ?? []) };
 }
 
 export function togglePart(config, id) {

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
+import { createSurfaceMaterial } from './materials.js';
 
 export function buildCockpit(parent,h,m){
   const {add,rod,tube,box,ring,bolt}=h;
   const {black,dark,silver,alloy,rubber,amber,glass}=m;
-  const chrome=new THREE.MeshStandardMaterial({color:'#c7cdd0',metalness:1,roughness:.18});
+  const chrome=createSurfaceMaterial('chrome',{name:'polished_fork_stanchion_and_lamp_rim'});
   const clear=new THREE.MeshPhysicalMaterial({color:'#e7ecee',metalness:0,roughness:.08,transparent:true,opacity:.19,clearcoat:1,depthWrite:false});
-  const satin=new THREE.MeshStandardMaterial({color:'#101214',metalness:.3,roughness:.38});
-  const recess=new THREE.MeshStandardMaterial({color:'#030506',metalness:.18,roughness:.26});
+  const satin=createSurfaceMaterial('plastic',{color:'#151719',roughness:.42,name:'satin_control_housings'});
+  const recess=createSurfaceMaterial('plastic',{color:'#030506',roughness:.29,name:'headlamp_inner_recess'});
   const cockpit=new THREE.Group();cockpit.name='fork_and_controls_2025';parent.add(cockpit);
   for(const s of [-1,1]){
     const z=s*.108;
