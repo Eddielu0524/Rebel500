@@ -197,9 +197,14 @@ export function createMotorcycle() {
   const screen=add(windshield,wg,createSmokedScreenMaterial());screen.castShadow=false;
   for(const s of [-1,1]){rod(windshield,[-.448,.85,s*.098],[-.47,.998,s*.12],.006,anodized);bolt(windshield,[-.470,.988,s*.122],silver,.005,'x');}
   const gaiters=partGroup('gaiters');
-  for(const s of [-1,1])for(let i=0;i<14;i++){
-    const t=i/13;const a=[-.593+t*.089,.61+t*.166,s*.098],b=[a[0]+.004,a[1]+.008,a[2]];
-    rod(gaiters,a,b,.029+(i%2)*.0015,bootRubber,.030,28);
+  for(const s of [-1,1]){
+    // A boot is a continuous rubber sleeve with ribs, not exposed metal between rings.
+    const forkAt=y=>[-.603+(y-.582)*(.194/.366),y,s*.108];
+    rod(gaiters,forkAt(.608),forkAt(.796),.0245,bootRubber,.0245,36);
+    for(let i=0;i<14;i++){
+      const y=.609+i*.0135;
+      rod(gaiters,forkAt(y),forkAt(y+.008),.030,bootRubber,.029,36);
+    }
   }
   const pillion=partGroup('pillion');
   box(pillion,[.25,.065,.202],[.755,.775,0],seatMat,.027,[0,0,-.06]);
